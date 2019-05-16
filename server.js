@@ -44,40 +44,42 @@ var userSchema = new Schema({
     username: {
         type: String
     },
-    _id: {
-        type: String
+    id: {
+        type: String,
     }
-}, { _id: false });
+});
 
+// * The Model
 var Username = mongoose.model('Username', userSchema, 'user-details');
 
+// ! API to create new user for execise tracking
 app.post('/api/exercise/new-user', (req, res) => {
     let username = req['body']['username'];
     let userId = getUserId();
     console.log('reqs.param :', username);
-    var usernameObject = new Username( {
+    var usernameObject = new Username({
         'username': username,
-        '_id': userId
+        'id': userId
     });
-    var createUser= function(usernameObj,done){        
+    var createUser = function (usernameObj, done) {
         usernameObj.save((err, data) => {
-        if (err) done(err);
-        done(null, data);
-    });
-    }
-
-    function handlerForCreateUser(err, data){
-        if(err) {
-            console.log('Error while creating user:',err);
-        }
-        console.log('Success, user added:',data);
-        res.json({
-            'username':username,
-            '_id':userId
+            if (err) done(err);
+            done(null, data);
         });
     }
 
-    createUser(usernameObject,handlerForCreateUser);
+    function handlerForCreateUser(err, data) {
+        if (err) {
+            console.log('Error while creating user:', err);
+        }
+        console.log('Success, user added:', data);
+        res.json({
+            'username': username,
+            '_id': userId
+        });
+    }
+
+    createUser(usernameObject, handlerForCreateUser);
 });
 
 // * Get a 9 character userId mostly random
@@ -86,6 +88,92 @@ function getUserId() {
     console.log("random", r);
     return r;
 }
+
+var exerciseSchema = new Schema({
+    "username": {
+        type: String
+    },
+    "description": {
+        type: String
+    },
+    "duration": {
+        type: Number
+    },
+    "_id": {
+        type: String
+    },
+    "date": {
+        type: String
+    }
+});
+var Exercise = mongoose.model('Exercise', exerciseSchema, 'excercises');
+
+// * API to add excercises for a user
+app.post('/api/exercise/add', (req, res) => {
+    let reqBody = req['body'];
+    console.log('reqBody :', reqBody);
+    let userId = reqBody['userId'];
+    let username;
+    let userStatus = (async function getStaus(){
+        return await getUserStatus(userId);
+    })();
+    console.log('userStatus 1 :', userStatus);
+    let description = reqBody['description'];
+    let duration = reqBody['duration'];
+    let date = reqBody['date'];
+    var createExercise = function (exercise, done) {
+        exercise.save((err, data) => {
+            if (err) done(err);
+            done(null, data);
+        });
+    }
+
+    function handlerForCreateExercie(err, data) {
+        if (err) {
+            console.log('Error occured while creating exercise:', err);
+        }
+        console.log(data);
+        return data;
+    }
+
+    if (userStatus) {
+        console.log("Found user, now creating exercise");
+        let exerciseObj = new Exercise({
+            "username": username,
+            "description": description,
+            "duration": duration,
+            "_id": userId,
+            "date": date
+        });
+        let data = createExercise(exerciseObj, handlerForCreateExercie);
+        console.log('data after creation :', data);
+    } else {
+        res.send("User doesn't exit");
+        return;
+    }
+});
+
+async function getUserStatus(userId) {
+    let username;
+    let userStatus;
+    Username.find({ '_id': userId }).then((data) => {
+        if (data.length > 0) {
+            console.log(data);
+            username = data[0]['username'];
+            console.log('Success user found! :', username);
+            userStatus = true;
+            console.log('userStatus 1 :', userStatus);
+        } else {
+            console.log("Failed, user not found");
+            userStatus = false;
+            console.log('userStatus 2 :', userStatus);
+        }
+        return userStatus;
+    }).catch((err) => {
+        console.log("Error finding the user:", err);
+    });
+}
+
 
 // * Not found middleware
 app.use((req, res, next) => {
@@ -109,6 +197,7 @@ app.use((err, req, res, next) => {
         errCode = err.status || 500
         errMessage = err.message || 'Internal Server Error'
     }
+    console.log('Errcode: ', errCode);
     res.status(errCode).type('txt')
         .send(errMessage);
 })
