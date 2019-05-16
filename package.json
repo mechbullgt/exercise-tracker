@@ -1,0 +1,31 @@
+{
+  "name": "exercise-tracker",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "body-parser": "1.19.0",
+    "cors": "2.8.5",
+    "express": "^4.16.4",
+    "mongodb": "3.2.4",
+    "mongoose": "5.5.8",
+    "shortid": "2.2.14",
+    "dotenv": "8.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mechbullgt/exercise-tracker.git"
+  },
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/mechbullgt/exercise-tracker/issues"
+  },
+  "homepage": "https://github.com/mechbullgt/exercise-tracker#readme",
+  "devDependencies": {
+    "eslint": "^5.16.0"
+  }
+}
