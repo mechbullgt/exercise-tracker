@@ -214,51 +214,65 @@ async function getUsernameFromUserId(userId) {
 // todo Mongo query that needs to be implemented db.getCollection('excercises').find({$and: [{'username':'terminator1991'},{'unixDate':{$gte:'2019-05-28'}} ,{'unixDate':{$lte:'2019-05-31'}}]}).limit(1);
 app.get("/api/exercise/log", (req, res) => {
     let searchQuery = req.query;
+    let userId;
+    let username;
+    let limitValue;
     console.log('query :', searchQuery);
-    let searchResponse = searchResponseHandler(searchQuery);
-    console.log('searchResponse :', searchResponse);
-    res.json({
-        'message':'working'
-    });
-})
+    let searchResponse = function searchResponseHandler(query) {
+        let result;
+        let responseObj = {};
+        let getUsername;
+        let queryKeys = Object.keys(query);
+        console.log('queryKeys :', queryKeys);
+        // * The keys must contain the userId else we'll show message
+        let userIdStatus = queryKeys.includes('userId');
+        userId = query['userId'];
+        console.log('userId :', userId);
+        if (!userIdStatus || userId == undefined || userId.length == 0) {
+            responseObj.message = 'UserId/username not found';
+            res.json(responseObj);
+        } else {
+            getUsername = getUsernameFromUserId(userId).then((data) => {
+                username = data;
+                console.log('username :', username);
+                searchQueryChain(username, query, handlerForQueryChain);
+            });
+        }
+    };
 
-function searchResponseHandler(query){
-    let responseObj ={} ;
-    let getUsername;
-    let queryKeys = Object.keys(query);
-    console.log('queryKeys :', queryKeys);
-    // * The keys must contain the userId else we'll show message
-    let userIdStatus = queryKeys.includes('userId');
-    let userId = query['userId'];
-    console.log('userId :', userId);
-    if(!userIdStatus || userId==undefined){
-        responseObj.message ='UserId/username not found';
-        return responseObj;
-    } else {
-        getUsername = getUsernameFromUserId(userId).then((data)=>{
-            let username = data;
-            console.log('username :', username);
-            return searchQueryChain(username, handlerForQueryChain);
+    searchResponse(searchQuery);
+    // todo Error handling for negative scenarios is pending
+    var searchQueryChain = function (username, query, done) {
+        limitValue = parseInt(query['limit']);
+        let dbQuery = Exercise.find();
+        dbQuery.where('username').equals(username);
+        dbQuery.limit(limitValue);
+        dbQuery.exec((err, data) => {
+            if (err) done(err);
+            done(null, data);
+        })
+    };
+    function handlerForQueryChain(err, data) {
+        if (err) {
+            console.log('Err occurred in query chain:', err);
+        }
+        console.log('Query chain execution successfull');
+        console.log('data from chain execution :', data);
+        let logsArr = [];
+        logsArr.push(data);
+        res.json({
+            '_id':userId,
+            'username':username,
+            'from':'todo',
+            'to':'todo',
+            'count':limitValue,
+            'logs':logsArr
         });
     }
-}
 
-var searchQueryChain = function (username, done){
-    let dbQuery = Exercise.find();
-dbQuery.where('username').equals(username);
-dbQuery.exec((err, data)=>{
-    if(err) done(err);
-    done(null, data);
-})};
+});
 
-function handlerForQueryChain(err, data){
-    if(err){
-        console.log('Err occurred in query chain:', err);
-    }
-    console.log('Query chain execution successfull');
-    console.log('data from chain execution :', data);
-    return data;
-}
+
 
 
 // * Not found middleware
