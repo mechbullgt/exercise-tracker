@@ -91,7 +91,8 @@ function getUserId() {
 
 var exerciseSchema = new Schema({
     "username": {
-        type: String
+        type: String,
+        required:true
     },
     "description": {
         type: String
@@ -108,19 +109,49 @@ var exerciseSchema = new Schema({
 });
 var Exercise = mongoose.model('Exercise', exerciseSchema, 'excercises');
 
+var username;
 // * API to add excercises for a user
 app.post('/api/exercise/add', (req, res) => {
     let reqBody = req['body'];
     console.log('reqBody :', reqBody);
     let userId = reqBody['userId'];
-    let username;
-    let userStatus = (async function getStaus(){
-        return await getUserStatus(userId);
-    })();
-    console.log('userStatus 1 :', userStatus);
     let description = reqBody['description'];
     let duration = reqBody['duration'];
     let date = reqBody['date'];
+
+    // * Getting user information from the user-details collection
+    let getUsername = getUsernameFromUserId(userId);
+    getUsername.then((data)=>{
+        username = data;
+        // * Only create the exercise if the username is found i.e, not undefined
+        if(username!==undefined){
+            console.log('username from postAPI :', username);
+            console.log("Found user, now creating exercise");
+            console.log('username :', username);
+            let exerciseObj = new Exercise({
+                "username": username,
+                "description": description,
+                "duration": duration,
+                "id": userId,
+                "date": date
+            });
+            console.log('exerciseObj :', exerciseObj);
+            createExercise(exerciseObj, handlerForCreateExercie);
+            res.json({
+                "username":username,
+                "description":description,
+                "duration":duration,
+                "_id":userId,
+                "date":date
+            });
+        } else{
+            // * Incase the username is not found, i.e, undefined
+            console.log("User doesn't exit");
+            res.send("User doesn't exits");
+        }
+    })
+
+    // ! Callback based method to create Exercise
     var createExercise = function (exercise, done) {
         exercise.save((err, data) => {
             if (err) done(err);
@@ -132,46 +163,28 @@ app.post('/api/exercise/add', (req, res) => {
         if (err) {
             console.log('Error occured while creating exercise:', err);
         }
-        console.log(data);
+        console.log('User exercise created:',data);
         return data;
-    }
-
-    if (userStatus) {
-        console.log("Found user, now creating exercise");
-        let exerciseObj = new Exercise({
-            "username": username,
-            "description": description,
-            "duration": duration,
-            "id": userId,
-            "date": date
-        });
-        let data = createExercise(exerciseObj, handlerForCreateExercie);
-        console.log('data after creation :', data);
-    } else {
-        res.send("User doesn't exit");
-        return;
     }
 });
 
-async function getUserStatus(userId) {
+// * Function to get the username based on the userId enterned by the user
+async function getUsernameFromUserId(userId) {
     let username;
-    let userStatus;
-    Username.find({ '_id': userId }).then((data) => {
-        if (data.length > 0) {
+    let foundData = Username.find({ 'id': userId })
+    .then((data) => {
+        if (data!==undefined) {
             console.log(data);
             username = data[0]['username'];
             console.log('Success user found! :', username);
-            userStatus = true;
-            console.log('userStatus 1 :', userStatus);
-        } else {
-            console.log("Failed, user not found");
-            userStatus = false;
-            console.log('userStatus 2 :', userStatus);
         }
-        return userStatus;
     }).catch((err) => {
         console.log("Error finding the user:", err);
     });
+    // ? Very important step, based on the await we can get the username or not
+    await foundData;
+    console.log('username from async function :', username);
+    return username;
 }
 
 
@@ -198,6 +211,7 @@ app.use((err, req, res, next) => {
         errMessage = err.message || 'Internal Server Error'
     }
     console.log('Errcode: ', errCode);
+    console.log('Error Message',errMessage);
     res.status(errCode).type('txt')
         .send(errMessage);
 })
