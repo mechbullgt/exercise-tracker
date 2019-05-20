@@ -39,7 +39,7 @@ app.get('/api/hi', (req, res) => {
 });
 
 // * Sehema for the new user to be created for the exercise
-// ! We don't need the _id provided by default
+// ! We are using the _id provided by default, and our id is a radmon 9 char String
 var userSchema = new Schema({
     username: {
         type: String
@@ -75,7 +75,7 @@ app.post('/api/exercise/new-user', (req, res) => {
         console.log('Success, user added:', data);
         res.json({
             'username': username,
-            '_id': userId
+            'id': userId
         });
     }
 
@@ -99,7 +99,7 @@ var exerciseSchema = new Schema({
     "duration": {
         type: Number
     },
-    "_id": {
+    "id": {
         type: String
     },
     "date": {
@@ -142,7 +142,7 @@ app.post('/api/exercise/add', (req, res) => {
             "username": username,
             "description": description,
             "duration": duration,
-            "_id": userId,
+            "id": userId,
             "date": date
         });
         let data = createExercise(exerciseObj, handlerForCreateExercie);
