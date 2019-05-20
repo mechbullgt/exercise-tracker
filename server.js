@@ -89,10 +89,11 @@ function getUserId() {
     return r;
 }
 
+// * unixDate key was added for sorting the excercises
 var exerciseSchema = new Schema({
     "username": {
         type: String,
-        required:true
+        required: true
     },
     "description": {
         type: String
@@ -104,6 +105,9 @@ var exerciseSchema = new Schema({
         type: String
     },
     "date": {
+        type: String
+    },
+    "unixDate": {
         type: String
     }
 });
@@ -118,27 +122,30 @@ app.post('/api/exercise/add', (req, res) => {
     let description = reqBody['description'];
     let duration = reqBody['duration'];
     let reqDate = reqBody['date'];
-    let getDate = (reqDate)=>{
+    let getDate = (reqDate) => {
         let dnow;
-        if(reqDate.length==0){
+        if (reqDate.length == 0) {
             dnow = Date.now();
             console.log('dnow :', dnow);
         } else {
+            // * Returning date in unix format for sorting
             dnow = reqDate;
             console.log('dnow :', dnow);
         }
         return dnow;
     };
 
-    let unixDate = getDate(reqDate);
-    let date = (new Date(unixDate).toUTCString()).substring(0,16);
+    let exerciseDate = getDate(reqDate);
+    let date = (new Date(exerciseDate).toUTCString()).substring(0, 16);
+    let unixDate = exerciseDate;
+    console.log('unixDate :', unixDate);
 
     // * Getting user information from the user-details collection
     let getUsername = getUsernameFromUserId(userId);
-    getUsername.then((data)=>{
+    getUsername.then((data) => {
         username = data;
         // * Only create the exercise if the username is found i.e, not undefined
-        if(username!==undefined){
+        if (username !== undefined) {
             console.log('username from postAPI :', username);
             console.log("Found user, now creating exercise");
             console.log('username :', username);
@@ -147,18 +154,19 @@ app.post('/api/exercise/add', (req, res) => {
                 "description": description,
                 "duration": duration,
                 "id": userId,
-                "date": date
+                "date": date,
+                "unixDate": unixDate
             });
             console.log('exerciseObj :', exerciseObj);
             createExercise(exerciseObj, handlerForCreateExercie);
             res.json({
-                "username":username,
-                "description":description,
-                "duration":duration,
-                "_id":userId,
-                "date":date
+                "username": username,
+                "description": description,
+                "duration": duration,
+                "_id": userId,
+                "date": date
             });
-        } else{
+        } else {
             // * Incase the username is not found, i.e, undefined
             console.log("User doesn't exit");
             res.send("User doesn't exits");
@@ -177,7 +185,7 @@ app.post('/api/exercise/add', (req, res) => {
         if (err) {
             console.log('Error occured while creating exercise:', err);
         }
-        console.log('User exercise created:',data);
+        console.log('User exercise created:', data);
         return data;
     }
 });
@@ -186,21 +194,31 @@ app.post('/api/exercise/add', (req, res) => {
 async function getUsernameFromUserId(userId) {
     let username;
     let foundData = Username.find({ 'id': userId })
-    .then((data) => {
-        if (data!==undefined) {
-            console.log(data);
-            username = data[0]['username'];
-            console.log('Success user found! :', username);
-        }
-    }).catch((err) => {
-        console.log("Error finding the user:", err);
-    });
+        .then((data) => {
+            if (data !== undefined) {
+                console.log(data);
+                username = data[0]['username'];
+                console.log('Success user found! :', username);
+            }
+        }).catch((err) => {
+            console.log("Error finding the user:", err);
+        });
     // ? Very important step, based on the await we can get the username or not
     await foundData;
     console.log('username from async function :', username);
     return username;
 }
 
+// ! API to get the exercises based on the query parameters
+// todo Sample query http://localhost:3000/api/exercise/log?userId=r0e3uaj22&from=20190520&to=20190529&limit=1
+// todo Mongo query that needs to be implemented db.getCollection('excercises').find({$and: [{'username':'terminator1991'},{'unixDate':{$gte:'2019-05-28'}} ,{'unixDate':{$lte:'2019-05-31'}}]}).limit(1);
+app.get("/api/exercise/log", (req, res) => {
+    let query = req.query;
+    console.log('query :', query);
+    res.json({
+        "message": "working"
+    });
+})
 
 // * Not found middleware
 app.use((req, res, next) => {
@@ -225,7 +243,7 @@ app.use((err, req, res, next) => {
         errMessage = err.message || 'Internal Server Error'
     }
     console.log('Errcode: ', errCode);
-    console.log('Error Message',errMessage);
+    console.log('Error Message', errMessage);
     res.status(errCode).type('txt')
         .send(errMessage);
 })
