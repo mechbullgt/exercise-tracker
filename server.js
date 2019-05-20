@@ -217,9 +217,10 @@ app.get("/api/exercise/log", (req, res) => {
     let userId;
     let username;
     let limitValue;
+    let fromDate;
+    let toDate;
     console.log('query :', searchQuery);
     let searchResponse = function searchResponseHandler(query) {
-        let result;
         let responseObj = {};
         let getUsername;
         let queryKeys = Object.keys(query);
@@ -227,6 +228,8 @@ app.get("/api/exercise/log", (req, res) => {
         // * The keys must contain the userId else we'll show message
         let userIdStatus = queryKeys.includes('userId');
         userId = query['userId'];
+        fromDate=query['from'];
+        toDate= query['to'];
         console.log('userId :', userId);
         if (!userIdStatus || userId == undefined || userId.length == 0) {
             responseObj.message = 'UserId/username not found';
@@ -246,6 +249,7 @@ app.get("/api/exercise/log", (req, res) => {
         limitValue = parseInt(query['limit']);
         let dbQuery = Exercise.find();
         dbQuery.where('username').equals(username);
+        dbQuery.or[{date:{$gte:fromDate}},{date:{$lte:toDate}}];
         dbQuery.select('description duration date -_id');
         dbQuery.limit(limitValue);
         dbQuery.exec((err, data) => {
@@ -262,9 +266,9 @@ app.get("/api/exercise/log", (req, res) => {
         res.json({
             '_id':userId,
             'username':username,
-            'from':'todo',
-            'to':'todo',
-            'count':limitValue,
+            'from':fromDate,
+            'to':toDate,
+            'count':(data===undefined)?0:data.length,
             'log':data
         });
     }
