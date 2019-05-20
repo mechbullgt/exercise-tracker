@@ -117,7 +117,21 @@ app.post('/api/exercise/add', (req, res) => {
     let userId = reqBody['userId'];
     let description = reqBody['description'];
     let duration = reqBody['duration'];
-    let date = reqBody['date'];
+    let reqDate = reqBody['date'];
+    let getDate = (reqDate)=>{
+        let dnow;
+        if(reqDate.length==0){
+            dnow = Date.now();
+            console.log('dnow :', dnow);
+        } else {
+            dnow = reqDate;
+            console.log('dnow :', dnow);
+        }
+        return dnow;
+    };
+
+    let unixDate = getDate(reqDate);
+    let date = (new Date(unixDate).toUTCString()).substring(0,16);
 
     // * Getting user information from the user-details collection
     let getUsername = getUsernameFromUserId(userId);
