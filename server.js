@@ -213,12 +213,53 @@ async function getUsernameFromUserId(userId) {
 // todo Sample query http://localhost:3000/api/exercise/log?userId=r0e3uaj22&from=20190520&to=20190529&limit=1
 // todo Mongo query that needs to be implemented db.getCollection('excercises').find({$and: [{'username':'terminator1991'},{'unixDate':{$gte:'2019-05-28'}} ,{'unixDate':{$lte:'2019-05-31'}}]}).limit(1);
 app.get("/api/exercise/log", (req, res) => {
-    let query = req.query;
-    console.log('query :', query);
+    let searchQuery = req.query;
+    console.log('query :', searchQuery);
+    let searchResponse = searchResponseHandler(searchQuery);
+    console.log('searchResponse :', searchResponse);
     res.json({
-        "message": "working"
+        'message':'working'
     });
 })
+
+function searchResponseHandler(query){
+    let responseObj ={} ;
+    let getUsername;
+    let queryKeys = Object.keys(query);
+    console.log('queryKeys :', queryKeys);
+    // * The keys must contain the userId else we'll show message
+    let userIdStatus = queryKeys.includes('userId');
+    let userId = query['userId'];
+    console.log('userId :', userId);
+    if(!userIdStatus || userId==undefined){
+        responseObj.message ='UserId/username not found';
+        return responseObj;
+    } else {
+        getUsername = getUsernameFromUserId(userId).then((data)=>{
+            let username = data;
+            console.log('username :', username);
+            return searchQueryChain(username, handlerForQueryChain);
+        });
+    }
+}
+
+var searchQueryChain = function (username, done){
+    let dbQuery = Exercise.find();
+dbQuery.where('username').equals(username);
+dbQuery.exec((err, data)=>{
+    if(err) done(err);
+    done(null, data);
+})};
+
+function handlerForQueryChain(err, data){
+    if(err){
+        console.log('Err occurred in query chain:', err);
+    }
+    console.log('Query chain execution successfull');
+    console.log('data from chain execution :', data);
+    return data;
+}
+
 
 // * Not found middleware
 app.use((req, res, next) => {
