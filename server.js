@@ -246,6 +246,7 @@ app.get("/api/exercise/log", (req, res) => {
         limitValue = parseInt(query['limit']);
         let dbQuery = Exercise.find();
         dbQuery.where('username').equals(username);
+        dbQuery.select('description duration date -_id');
         dbQuery.limit(limitValue);
         dbQuery.exec((err, data) => {
             if (err) done(err);
@@ -258,15 +259,13 @@ app.get("/api/exercise/log", (req, res) => {
         }
         console.log('Query chain execution successfull');
         console.log('data from chain execution :', data);
-        let logsArr = [];
-        logsArr.push(data);
         res.json({
             '_id':userId,
             'username':username,
             'from':'todo',
             'to':'todo',
             'count':limitValue,
-            'logs':logsArr
+            'log':data
         });
     }
 
