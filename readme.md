@@ -1,0 +1,1 @@
+This is a web application to test the APIs being created using Express and MongoDB (mlabs) for freeCodeCamp certification exercises.
