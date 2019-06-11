@@ -227,6 +227,7 @@ app.get("/api/exercise/log", (req, res) => {
         console.log('queryKeys :', queryKeys);
         // * The keys must contain the userId else we'll show message
         let userIdStatus = queryKeys.includes('userId');
+        console.log('userIdStatus:',userIdStatus);
         userId = query['userId'];
         fromDate=query['from'];
         toDate= query['to'];
