@@ -184,6 +184,7 @@ app.post('/api/exercise/add', (req, res) => {
     function handlerForCreateExercie(err, data) {
         if (err) {
             console.log('Error occured while creating exercise:', err);
+            res.send('Error occured while creating exercise:',err);
         }
         console.log('User exercise created:', data);
         return data;
